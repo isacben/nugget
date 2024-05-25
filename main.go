@@ -1,7 +1,10 @@
 package main
 
 import (
+	"encoding/json"
 	"fmt"
+	"io"
+	"net/http"
 	"os"
 
 	"gopkg.in/yaml.v3"
@@ -16,6 +19,14 @@ type Step struct {
 	Method string `yaml:"method"`
 	Url    string `yaml:"url"`
 }
+
+type AuthJson struct {
+	Expires_at string `json:"expires_at"`
+	Token      string `json:"token"`
+}
+
+var clientId = os.Getenv("clientId")
+var apiKey = os.Getenv("apiKey")
 
 func validate(prog Prog) {
 	err := false
@@ -40,15 +51,73 @@ func validate(prog Prog) {
 	}
 }
 
+func getToken() string {
+	requestURL := fmt.Sprintf("%s/api/v1/authentication/login", os.Getenv("apiUrl"))
+	req, err := http.NewRequest("POST", requestURL, nil)
+
+	req.Header = http.Header{
+		"Content-Type": {"application/json"},
+		"x-client-id":  {clientId},
+		"x-api-key":    {apiKey},
+	}
+
+	if err != nil {
+		fmt.Printf("client: could not create request: %s\n", err)
+		os.Exit(1)
+	}
+
+	res, err := http.DefaultClient.Do(req)
+	if err != nil {
+		fmt.Printf("client: error making http request: %s\n", err)
+		os.Exit(1)
+	}
+
+	defer res.Body.Close()
+
+	var authJson AuthJson
+	if err := json.NewDecoder(res.Body).Decode(&authJson); err != nil {
+		panic(err)
+	}
+
+	return authJson.Token
+}
+
 func run(prog Prog) {
+	token := getToken()
 	for _, step := range prog.Steps {
 		fmt.Println(step.Name)
+
+		req, err := http.NewRequest(step.Method, step.Url, nil)
+		authHeader := fmt.Sprintf("Bearer %s", token)
+		req.Header = http.Header{
+			"Content-Type":  {"application/json"},
+			"Authorization": {authHeader},
+		}
+
+		// req.Header.Add("x-client-id", clientId)
+		// req.Header.Add("x-api-key", apiKey)
+
+		if err != nil {
+			fmt.Printf("client: could not create request: %s\n", err)
+			os.Exit(1)
+		}
+
+		res, err := http.DefaultClient.Do(req)
+		if err != nil {
+			fmt.Printf("client: error making http request: %s\n", err)
+			os.Exit(1)
+		}
+
+		body, err := io.ReadAll(res.Body)
+		if err != nil {
+			fmt.Printf("client: could not read response body: %s\n", err)
+			os.Exit(1)
+		}
+		fmt.Printf("client: response body: %s\n", body)
 	}
 }
 
 func main() {
-	var clientId = os.Getenv("clientId")
-	var apiKey = os.Getenv("apiKey")
 
 	// load yaml file
 	prog := Prog{}
