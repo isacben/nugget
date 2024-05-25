@@ -14,7 +14,30 @@ type Prog struct {
 type Step struct {
 	Name   string `yaml:"name"`
 	Method string `yaml:"method"`
-	URL    string `yaml:"url"`
+	Url    string `yaml:"url"`
+}
+
+func validate(prog Prog) {
+	err := false
+
+	for k, step := range prog.Steps {
+		if step.Name == "" {
+			fmt.Printf(">>> Error - <name> missing in step %v\n", k+1)
+			err = true
+		}
+		if step.Method == "" {
+			fmt.Printf(">>> Error - <method> missing in step %v\n", k+1)
+			err = true
+		}
+		if step.Url == "" {
+			fmt.Printf(">>> Error - <url> missing in step %v\n", k+1)
+			err = true
+		}
+	}
+
+	if err {
+		os.Exit(1)
+	}
 }
 
 func main() {
@@ -33,14 +56,7 @@ func main() {
 		fmt.Printf("Unmarshal: %v", err)
 	}
 
-	fmt.Printf("--- prog:\n%v\n\n", prog)
-
-	// dump
-	d, err := yaml.Marshal(&prog)
-	if err != nil {
-		fmt.Printf("error: %v", err)
-	}
-	fmt.Printf("--- prog dump:\n%s\n\n", string(d))
+	validate(prog)
 
 	fmt.Println(clientId, apiKey)
 }
