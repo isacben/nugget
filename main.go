@@ -40,6 +40,12 @@ func validate(prog Prog) {
 	}
 }
 
+func run(prog Prog) {
+	for _, step := range prog.Steps {
+		fmt.Println(step.Name)
+	}
+}
+
 func main() {
 	var clientId = os.Getenv("clientId")
 	var apiKey = os.Getenv("apiKey")
@@ -57,6 +63,7 @@ func main() {
 	}
 
 	validate(prog)
+	run(prog)
 
 	fmt.Println(clientId, apiKey)
 }
