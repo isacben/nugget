@@ -1,12 +1,16 @@
 package main
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
+	"html/template"
 	"io"
 	"net/http"
 	"os"
+	"strings"
 
+	"github.com/google/uuid"
 	"gopkg.in/yaml.v3"
 )
 
@@ -18,11 +22,16 @@ type Step struct {
 	Name   string `yaml:"name"`
 	Method string `yaml:"method"`
 	Url    string `yaml:"url"`
+	Body   string `json:"body"`
 }
 
 type AuthJson struct {
 	Expires_at string `json:"expires_at"`
 	Token      string `json:"token"`
+}
+
+type RandomValues struct {
+	Uuid string
 }
 
 var clientId = os.Getenv("clientId")
@@ -82,20 +91,51 @@ func getToken() string {
 	return authJson.Token
 }
 
+func parse(s string, randVal RandomValues) string {
+	urlTemplate, err := template.New("urlTemplate").Parse(s)
+	if err != nil {
+		panic(err)
+	}
+
+	var buf bytes.Buffer
+	err = urlTemplate.Execute(&buf, randVal)
+	if err != nil {
+		panic(err)
+	}
+	return buf.String()
+}
+
 func run(prog Prog) {
 	token := getToken()
 	for _, step := range prog.Steps {
+		// prepare struct with values for the template
+		randVal := RandomValues{uuid.NewString()}
+
 		fmt.Println(step.Name)
 
-		req, err := http.NewRequest(step.Method, step.Url, nil)
+		step.Url = parse(step.Url, randVal)
+		fmt.Println(step.Url)
+
+		var reqBody *strings.Reader
+
+		if step.Body != "" {
+			step.Body = parse(step.Body, randVal)
+			reqBody = strings.NewReader(step.Body)
+		} else {
+			reqBody = strings.NewReader("")
+		}
+
+		//var results interface{}
+		//json.Unmarshal([]byte(step.Body.(string)), &results)
+		//m := results.(map[string]interface{})
+		//fmt.Println(m["hello"].(string))
+
+		req, err := http.NewRequest(step.Method, step.Url, reqBody)
 		authHeader := fmt.Sprintf("Bearer %s", token)
 		req.Header = http.Header{
 			"Content-Type":  {"application/json"},
 			"Authorization": {authHeader},
 		}
-
-		// req.Header.Add("x-client-id", clientId)
-		// req.Header.Add("x-api-key", apiKey)
 
 		if err != nil {
 			fmt.Printf("client: could not create request: %s\n", err)
@@ -134,5 +174,4 @@ func main() {
 	validate(prog)
 	run(prog)
 
-	fmt.Println(clientId, apiKey)
 }
