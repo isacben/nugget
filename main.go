@@ -19,10 +19,11 @@ type Prog struct {
 }
 
 type Step struct {
-	Name   string `yaml:"name"`
-	Method string `yaml:"method"`
-	Url    string `yaml:"url"`
-	Body   string `json:"body"`
+	Name    string            `yaml:"name"`
+	Method  string            `yaml:"method"`
+	Url     string            `yaml:"url"`
+	Body    string            `json:"body"`
+	Capture map[string]string `yaml:"capture"`
 }
 
 type AuthJson struct {
@@ -154,6 +155,29 @@ func run(prog Prog) {
 			os.Exit(1)
 		}
 		fmt.Printf("client: response body: %s\n", body)
+
+		//var f interface{}
+		var output map[string]interface{}
+		err2 := json.Unmarshal(body, &output)
+		if err2 != nil {
+			fmt.Println("Error")
+		}
+
+		//m := f.(map[string]interface{})
+		//fmt.Println(m["id"])
+
+		map2 := map[string]string{
+			"customer": output["id"].(string),
+		}
+
+		fmt.Println("The id is", map2["customer"])
+		fmt.Println("The additional info is", output["additional_info"].(map[string]interface{})["registered_via_social_media"])
+
+		fmt.Println(step.Capture)
+
+		for k, v := range step.Capture {
+			fmt.Println(k, "value is", v)
+		}
 	}
 }
 
