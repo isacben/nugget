@@ -11,6 +11,7 @@ import (
 	"strings"
 
 	"github.com/google/uuid"
+	"github.com/itchyny/gojq"
 	"gopkg.in/yaml.v3"
 )
 
@@ -170,30 +171,38 @@ func run(prog Prog) {
 		// add the jq query result to the captures in a loop
 		if step.Capture != nil {
 			for key, val := range step.Capture {
-				fmt.Println(key, "value is", val)
+				// key = variable name from the capture: customer_id from "customer_id: .id" in the yaml file
+				// val = the string to query the response json: .id from "customer_id: .id" in the yaml file
 				// do the jq query on the response body string
+				query, err := gojq.Parse(val)
+				if err != nil {
+					fmt.Println(err)
+				}
+
+				// convert body byte to map[string]any to be able to run the query
+				bodyAny := make(map[string]any)
+				err4 := json.Unmarshal(body, &bodyAny)
+				if err4 != nil {
+					panic(err4)
+				}
+				iter := query.Run(bodyAny)
+				for {
+					v, ok := iter.Next()
+					if !ok {
+						break
+					}
+					if err, ok := v.(error); ok {
+						if err, ok := err.(*gojq.HaltError); ok && err.Value() == nil {
+							break
+						}
+						fmt.Println(err)
+					}
+					fmt.Printf("%s => %v\n", key, v)
+				}
+
 				stack.CapturedVals[key] = val
-				fmt.Println(stack.CapturedVals[key])
 			}
 		}
-
-		//var f interface{}
-		var output map[string]interface{}
-		err2 := json.Unmarshal(body, &output)
-		if err2 != nil {
-			fmt.Println("Error")
-		}
-
-		//m := f.(map[string]interface{})
-		//fmt.Println(m["id"])
-
-		map2 := map[string]string{
-			"customer": output["id"].(string),
-		}
-
-		fmt.Println("The id is", map2["customer"])
-		fmt.Println("The additional info is", output["additional_info"].(map[string]interface{})["registered_via_social_media"])
-
 	}
 }
 
