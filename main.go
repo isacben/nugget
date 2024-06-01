@@ -35,6 +35,11 @@ type RandomValues struct {
 	Uuid string
 }
 
+type Stack struct {
+	Uuid         string
+	CapturedVals map[string]string
+}
+
 var clientId = os.Getenv("clientId")
 var apiKey = os.Getenv("apiKey")
 
@@ -92,14 +97,14 @@ func getToken() string {
 	return authJson.Token
 }
 
-func parse(s string, randVal RandomValues) string {
+func parse(s string, stack Stack) string {
 	urlTemplate, err := template.New("urlTemplate").Parse(s)
 	if err != nil {
 		panic(err)
 	}
 
 	var buf bytes.Buffer
-	err = urlTemplate.Execute(&buf, randVal)
+	err = urlTemplate.Execute(&buf, stack)
 	if err != nil {
 		panic(err)
 	}
@@ -110,17 +115,21 @@ func run(prog Prog) {
 	token := getToken()
 	for _, step := range prog.Steps {
 		// prepare struct with values for the template
-		randVal := RandomValues{uuid.NewString()}
+		//randVal := RandomValues{uuid.NewString()}
+		stack := Stack{
+			Uuid:         uuid.NewString(),
+			CapturedVals: make(map[string]string),
+		}
 
 		fmt.Println(step.Name)
 
-		step.Url = parse(step.Url, randVal)
+		step.Url = parse(step.Url, stack)
 		fmt.Println(step.Url)
 
 		var reqBody *strings.Reader
 
 		if step.Body != "" {
-			step.Body = parse(step.Body, randVal)
+			step.Body = parse(step.Body, stack)
 			reqBody = strings.NewReader(step.Body)
 		} else {
 			reqBody = strings.NewReader("")
@@ -149,12 +158,24 @@ func run(prog Prog) {
 			os.Exit(1)
 		}
 
+		// Response body
 		body, err := io.ReadAll(res.Body)
 		if err != nil {
 			fmt.Printf("client: could not read response body: %s\n", err)
 			os.Exit(1)
 		}
-		fmt.Printf("client: response body: %s\n", body)
+		fmt.Printf("response body: %s\n", body)
+
+		// if there are captures
+		// add the jq query result to the captures in a loop
+		if step.Capture != nil {
+			for key, val := range step.Capture {
+				fmt.Println(key, "value is", val)
+				// do the jq query on the response body string
+				stack.CapturedVals[key] = val
+				fmt.Println(stack.CapturedVals[key])
+			}
+		}
 
 		//var f interface{}
 		var output map[string]interface{}
@@ -173,11 +194,6 @@ func run(prog Prog) {
 		fmt.Println("The id is", map2["customer"])
 		fmt.Println("The additional info is", output["additional_info"].(map[string]interface{})["registered_via_social_media"])
 
-		fmt.Println(step.Capture)
-
-		for k, v := range step.Capture {
-			fmt.Println(k, "value is", v)
-		}
 	}
 }
 
