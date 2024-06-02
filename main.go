@@ -98,7 +98,7 @@ func getToken() string {
 	return authJson.Token
 }
 
-func parse(s string, stack Stack) string {
+func parse(s string, stack map[string]string) string {
 	urlTemplate, err := template.New("urlTemplate").Parse(s)
 	if err != nil {
 		panic(err)
@@ -121,19 +121,22 @@ func run(prog Prog) {
 		CapturedVals: make(map[string]string),
 	}
 
+	stack2 := make(map[string]string)
+
 	for _, step := range prog.Steps {
 
 		stack.Uuid = uuid.NewString()
+		stack2["uuid"] = uuid.NewString()
 
 		fmt.Println(step.Name)
 
-		step.Url = parse(step.Url, stack)
+		step.Url = parse(step.Url, stack2)
 		fmt.Println(step.Url)
 
 		var reqBody *strings.Reader
 
 		if step.Body != "" {
-			step.Body = parse(step.Body, stack)
+			step.Body = parse(step.Body, stack2)
 			reqBody = strings.NewReader(step.Body)
 		} else {
 			reqBody = strings.NewReader("")
@@ -197,6 +200,7 @@ func run(prog Prog) {
 					}
 					// fmt.Printf("%s => %v\n", key, v)
 					stack.CapturedVals[key] = fmt.Sprintf("%v", v)
+					stack2[key] = fmt.Sprintf("%v", v)
 					//fmt.Printf("The stack value: %v\n", stack.CapturedVals[key])
 				}
 
