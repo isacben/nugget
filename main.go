@@ -32,15 +32,6 @@ type AuthJson struct {
 	Token      string `json:"token"`
 }
 
-type RandomValues struct {
-	Uuid string
-}
-
-type Stack struct {
-	Uuid         string
-	CapturedVals map[string]string
-}
-
 var clientId = os.Getenv("clientId")
 var apiKey = os.Getenv("apiKey")
 
@@ -115,28 +106,22 @@ func parse(s string, stack map[string]string) string {
 func run(prog Prog) {
 	token := getToken()
 
-	// prepare struct with values for the template
-	//randVal := RandomValues{uuid.NewString()}
-	stack := Stack{
-		CapturedVals: make(map[string]string),
-	}
-
-	stack2 := make(map[string]string)
+	// prepare stack map with values for the template
+	stack := make(map[string]string)
 
 	for _, step := range prog.Steps {
 
-		stack.Uuid = uuid.NewString()
-		stack2["uuid"] = uuid.NewString()
+		stack["uuid"] = uuid.NewString()
 
 		fmt.Println(step.Name)
 
-		step.Url = parse(step.Url, stack2)
+		step.Url = parse(step.Url, stack)
 		fmt.Println(step.Url)
 
 		var reqBody *strings.Reader
 
 		if step.Body != "" {
-			step.Body = parse(step.Body, stack2)
+			step.Body = parse(step.Body, stack)
 			reqBody = strings.NewReader(step.Body)
 		} else {
 			reqBody = strings.NewReader("")
@@ -168,8 +153,6 @@ func run(prog Prog) {
 		}
 		fmt.Printf("response body: %s\n", body)
 
-		// if there are captures
-		// add the jq query result to the captures in a loop
 		if step.Capture != nil {
 			for key, val := range step.Capture {
 				// key = variable name from the capture: customer_id from "customer_id: .id" in the yaml file
@@ -198,13 +181,8 @@ func run(prog Prog) {
 						}
 						fmt.Println(err)
 					}
-					// fmt.Printf("%s => %v\n", key, v)
-					stack.CapturedVals[key] = fmt.Sprintf("%v", v)
-					stack2[key] = fmt.Sprintf("%v", v)
-					//fmt.Printf("The stack value: %v\n", stack.CapturedVals[key])
+					stack[key] = fmt.Sprintf("%v", v)
 				}
-
-				// stack.CapturedVals[key] = val
 			}
 		}
 	}
