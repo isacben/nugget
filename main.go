@@ -114,13 +114,16 @@ func parse(s string, stack Stack) string {
 
 func run(prog Prog) {
 	token := getToken()
+
+	// prepare struct with values for the template
+	//randVal := RandomValues{uuid.NewString()}
+	stack := Stack{
+		CapturedVals: make(map[string]string),
+	}
+
 	for _, step := range prog.Steps {
-		// prepare struct with values for the template
-		//randVal := RandomValues{uuid.NewString()}
-		stack := Stack{
-			Uuid:         uuid.NewString(),
-			CapturedVals: make(map[string]string),
-		}
+
+		stack.Uuid = uuid.NewString()
 
 		fmt.Println(step.Name)
 
@@ -135,11 +138,6 @@ func run(prog Prog) {
 		} else {
 			reqBody = strings.NewReader("")
 		}
-
-		//var results interface{}
-		//json.Unmarshal([]byte(step.Body.(string)), &results)
-		//m := results.(map[string]interface{})
-		//fmt.Println(m["hello"].(string))
 
 		req, err := http.NewRequest(step.Method, step.Url, reqBody)
 		authHeader := fmt.Sprintf("Bearer %s", token)
@@ -197,10 +195,12 @@ func run(prog Prog) {
 						}
 						fmt.Println(err)
 					}
-					fmt.Printf("%s => %v\n", key, v)
+					// fmt.Printf("%s => %v\n", key, v)
+					stack.CapturedVals[key] = fmt.Sprintf("%v", v)
+					//fmt.Printf("The stack value: %v\n", stack.CapturedVals[key])
 				}
 
-				stack.CapturedVals[key] = val
+				// stack.CapturedVals[key] = val
 			}
 		}
 	}
@@ -211,7 +211,7 @@ func main() {
 	// load yaml file
 	prog := Prog{}
 
-	yamlFile, err := os.ReadFile("../poget-examples/get-customer.yaml")
+	yamlFile, err := os.ReadFile("../poget-examples/create-customer.yaml")
 	if err != nil {
 		fmt.Printf("yamlFile.Get err #%v ", err)
 	}
