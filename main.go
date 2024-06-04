@@ -33,12 +33,12 @@ type AuthJson struct {
 }
 
 type Output struct {
-	Name       string
-	Url        string
-	ReqBody    json.RawMessage
-	ReqHeaders string
-	ResHeaders interface{}
-	ResBody    json.RawMessage
+	Name       string              `json:"name"`
+	Url        string              `json:"url"`
+	ReqBody    json.RawMessage     `json:"request_body"`
+	ReqHeaders map[string][]string `json:"request_header"`
+	ResHeaders map[string][]string `json:"response_header"`
+	ResBody    json.RawMessage     `json:"response_body"`
 }
 
 var clientId = os.Getenv("clientId")
@@ -144,6 +144,8 @@ func run(prog Prog) {
 			"Content-Type":  {"application/json"},
 			"Authorization": {authHeader},
 		}
+
+		output.ReqHeaders = req.Header
 
 		if err != nil {
 			fmt.Printf("client: could not create request: %s\n", err)
