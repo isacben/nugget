@@ -32,6 +32,15 @@ type AuthJson struct {
 	Token      string `json:"token"`
 }
 
+type Output struct {
+	Name       string
+	Url        string
+	ReqBody    json.RawMessage
+	ReqHeaders string
+	ResHeaders interface{}
+	ResBody    json.RawMessage
+}
+
 var clientId = os.Getenv("clientId")
 var apiKey = os.Getenv("apiKey")
 
@@ -105,6 +114,7 @@ func parse(s string, stack map[string]string) string {
 
 func run(prog Prog) {
 	token := getToken()
+	var output = Output{}
 
 	// prepare stack map with values for the template
 	stack := make(map[string]string)
@@ -113,16 +123,17 @@ func run(prog Prog) {
 
 		stack["uuid"] = uuid.NewString()
 
-		fmt.Println(step.Name)
+		output.Name = step.Name
 
 		step.Url = parse(step.Url, stack)
-		fmt.Println(step.Url)
+		output.Url = step.Url
 
 		var reqBody *strings.Reader
 
 		if step.Body != "" {
 			step.Body = parse(step.Body, stack)
 			reqBody = strings.NewReader(step.Body)
+			output.ReqBody = []byte(step.Body)
 		} else {
 			reqBody = strings.NewReader("")
 		}
@@ -145,13 +156,16 @@ func run(prog Prog) {
 			os.Exit(1)
 		}
 
+		defer res.Body.Close()
+
 		// Response body
 		body, err := io.ReadAll(res.Body)
 		if err != nil {
 			fmt.Printf("client: could not read response body: %s\n", err)
 			os.Exit(1)
 		}
-		fmt.Printf("response body: %s\n", body)
+		output.ResBody = body
+		output.ResHeaders = res.Header
 
 		if step.Capture != nil {
 			for key, val := range step.Capture {
@@ -165,9 +179,9 @@ func run(prog Prog) {
 
 				// convert body byte to map[string]any to be able to run the query
 				bodyAny := make(map[string]any)
-				err4 := json.Unmarshal(body, &bodyAny)
-				if err4 != nil {
-					panic(err4)
+				err_ := json.Unmarshal(body, &bodyAny)
+				if err_ != nil {
+					panic(err_)
 				}
 				iter := query.Run(bodyAny)
 				for {
@@ -185,6 +199,15 @@ func run(prog Prog) {
 				}
 			}
 		}
+
+		outputPrint, err := json.Marshal(output)
+		if err != nil {
+			fmt.Println(err)
+		}
+		fmt.Println(string(outputPrint))
+
+		// clean output
+		output = Output{}
 	}
 }
 
@@ -193,7 +216,7 @@ func main() {
 	// load yaml file
 	prog := Prog{}
 
-	yamlFile, err := os.ReadFile("../poget-examples/create-customer.yaml")
+	yamlFile, err := os.ReadFile("../poget-examples/get-customer.yaml")
 	if err != nil {
 		fmt.Printf("yamlFile.Get err #%v ", err)
 	}
