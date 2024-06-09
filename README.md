@@ -44,8 +44,9 @@ steps:
 Use the capture keyword to capture a list of values from the response:
 
 ```yaml
-steps:                                                                                                                             - name: Create TODO item
-    method: POST
+steps:
+  - name: Create TODO item
+    method: POST 
     url: https://mytodos.com/api/v1/todos/create
     body: |
       {
@@ -87,7 +88,8 @@ The capture values can be use in the following areas:
 To chain several requests, just add more steps in the yaml file starting with the `name` of the step. Use the captured values as explained before.
 
 ```yaml
-steps:                                                                                                                             - name: Create TODO item
+steps:
+  - name: Create TODO item
     method: POST
     url: https://mytodos.com/api/v1/todos/create
     body: |
