@@ -23,6 +23,7 @@ type Step struct {
 	Name    string            `yaml:"name"`
 	Method  string            `yaml:"method"`
 	Url     string            `yaml:"url"`
+	Header  map[string]string `yaml:"header"`
 	Body    string            `json:"body"`
 	Capture map[string]string `yaml:"capture"`
 }
@@ -143,6 +144,13 @@ func run(prog Prog) {
 		req.Header = http.Header{
 			"Content-Type":  {"application/json"},
 			"Authorization": {authHeader},
+		}
+
+		if step.Header != nil {
+			for key, val := range step.Header {
+				val = parse(val, stack)
+				req.Header.Add(key, val)
+			}
 		}
 
 		output.ReqHeaders = req.Header
