@@ -48,6 +48,15 @@ var apiKey = os.Getenv("apiKey")
 func validate(prog Prog) {
 	err := false
 
+	if prog.Steps == nil {
+		fmt.Printf("steps keyword missing\n")
+		os.Exit(1)
+	}
+	if len(prog.Steps) < 1 {
+		fmt.Printf("at least one step is needed\n")
+		os.Exit(1)
+	}
+
 	for k, step := range prog.Steps {
 		if step.Name == "" {
 			fmt.Printf(">>> Error - <name> missing in step %v\n", k+1)
@@ -60,6 +69,15 @@ func validate(prog Prog) {
 		if step.Url == "" {
 			fmt.Printf(">>> Error - <url> missing in step %v\n", k+1)
 			err = true
+		}
+		if step.Body != "" {
+			var v interface{}
+			data := []byte(step.Body)
+			jerr := json.Unmarshal(data, &v)
+			if jerr != nil {
+				fmt.Printf("syntax error in step %v body near: `%s`\n", k+1, string(data[jerr.(*json.SyntaxError).Offset-1:]))
+				err = true
+			}
 		}
 	}
 
@@ -191,7 +209,7 @@ func run(prog Prog) {
 				bodyAny := make(map[string]any)
 				err_ := json.Unmarshal(body, &bodyAny)
 				if err_ != nil {
-					panic(err_)
+					fmt.Printf("unmarshal: %v\n", err)
 				}
 				iter := query.Run(bodyAny)
 				for {
@@ -211,14 +229,40 @@ func run(prog Prog) {
 		}
 
 		outputPrint, err := json.Marshal(output)
+		// TODO: bug here
+		// If the body json is not valid, the request is still sent above,
+		// and we only know about this error because we are trying to print the request body here.
+		// We should validate the json first, and if there is an error, stop the program
 		if err != nil {
-			fmt.Println(err)
+			fmt.Printf("marshal bad: %v\n", err)
 		}
 		fmt.Println(string(outputPrint))
 
 		// clean output
 		output = Output{}
 	}
+}
+
+func PrintErr(errors []error) {
+	type Output struct {
+		Status string   `json:"status"`
+		Data   []string `json:"data"`
+	}
+
+	output := Output{
+		Status: "error",
+		Data:   []string{},
+	}
+
+	for _, myerr := range errors {
+		output.Data = append(output.Data, myerr.Error())
+	}
+
+	outputPrint, err := json.Marshal(output)
+	if err != nil {
+		fmt.Println(err)
+	}
+	fmt.Print(string(outputPrint))
 }
 
 func Execute(fileName string) {
@@ -232,7 +276,8 @@ func Execute(fileName string) {
 	}
 	err = yaml.Unmarshal(yamlFile, &prog)
 	if err != nil {
-		fmt.Printf("Unmarshal: %v", err)
+		fmt.Printf("invalid file format: %v\n", err)
+		os.Exit(1)
 	}
 
 	validate(prog)
