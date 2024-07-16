@@ -49,25 +49,21 @@ func validate(prog Prog) {
 	err := false
 
 	if prog.Steps == nil {
-		fmt.Printf("steps keyword missing\n")
-		os.Exit(1)
-	}
-	if len(prog.Steps) < 1 {
-		fmt.Printf("at least one step is needed\n")
+		fmt.Printf("no steps found\n")
 		os.Exit(1)
 	}
 
 	for k, step := range prog.Steps {
 		if step.Name == "" {
-			fmt.Printf(">>> Error - <name> missing in step %v\n", k+1)
+			fmt.Printf("missing keyword in step %v: name\n", k+1)
 			err = true
 		}
 		if step.Method == "" {
-			fmt.Printf(">>> Error - <method> missing in step %v\n", k+1)
+			fmt.Printf("missing keyword in step %v: method\n", k+1)
 			err = true
 		}
 		if step.Url == "" {
-			fmt.Printf(">>> Error - <url> missing in step %v\n", k+1)
+			fmt.Printf("missing keyword in step %v: url\n", k+1)
 			err = true
 		}
 		if step.Body != "" {
@@ -133,7 +129,6 @@ func parse(s string, stack map[string]string) string {
 
 func run(prog Prog) {
 	token := getToken()
-	var output = Output{}
 
 	// prepare stack map with values for the template
 	stack := make(map[string]string)
@@ -142,17 +137,15 @@ func run(prog Prog) {
 
 		stack["uuid"] = uuid.NewString()
 
-		output.Name = step.Name
-
+		fmt.Printf("%s\n", step.Name)
 		step.Url = parse(step.Url, stack)
-		output.Url = step.Url
+		//fmt.Printf("%s\n", step.Url)
 
 		var reqBody *strings.Reader
 
 		if step.Body != "" {
 			step.Body = parse(step.Body, stack)
 			reqBody = strings.NewReader(step.Body)
-			output.ReqBody = []byte(step.Body)
 		} else {
 			reqBody = strings.NewReader("")
 		}
@@ -170,8 +163,6 @@ func run(prog Prog) {
 				req.Header.Add(key, val)
 			}
 		}
-
-		output.ReqHeaders = req.Header
 
 		if err != nil {
 			fmt.Printf("client: could not create request: %s\n", err)
@@ -192,8 +183,8 @@ func run(prog Prog) {
 			fmt.Printf("client: could not read response body: %s\n", err)
 			os.Exit(1)
 		}
-		output.ResBody = body
-		output.ResHeaders = res.Header
+		fmt.Printf("%v\n", string(body))
+		//output.ResHeaders = res.Header
 
 		if step.Capture != nil {
 			for key, val := range step.Capture {
@@ -207,10 +198,12 @@ func run(prog Prog) {
 
 				// convert body byte to map[string]any to be able to run the query
 				bodyAny := make(map[string]any)
+
 				err_ := json.Unmarshal(body, &bodyAny)
 				if err_ != nil {
 					fmt.Printf("unmarshal: %v\n", err)
 				}
+
 				iter := query.Run(bodyAny)
 				for {
 					v, ok := iter.Next()
@@ -227,19 +220,6 @@ func run(prog Prog) {
 				}
 			}
 		}
-
-		outputPrint, err := json.Marshal(output)
-		// TODO: bug here
-		// If the body json is not valid, the request is still sent above,
-		// and we only know about this error because we are trying to print the request body here.
-		// We should validate the json first, and if there is an error, stop the program
-		if err != nil {
-			fmt.Printf("marshal bad: %v\n", err)
-		}
-		fmt.Println(string(outputPrint))
-
-		// clean output
-		output = Output{}
 	}
 }
 

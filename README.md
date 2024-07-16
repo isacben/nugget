@@ -15,6 +15,12 @@ Test REST APIs from the command line.
 % nugget run your-requests-file.yaml
 ```
 
+You can use `jq` to pretty print the json. This will print non json lines, as well as pretty print the json output:
+
+```bash
+% nugget run requests.yaml | jq -Rr '. as $line | try (fromjson) catch $line'
+```
+
 ## Minimal example
 
 This would be a simple yaml file with a get request:
