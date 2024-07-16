@@ -21,6 +21,14 @@ You can use `jq` to pretty print the json. This will print non json lines, as we
 % nugget run requests.yaml | jq -Rr '. as $line | try (fromjson) catch $line'
 ```
 
+You can add a function to your profile file to shorten the long jq command and replance it with just `jqq`:
+
+```bash
+jqq(){
+  jq -Rr '. as $line | try (fromjson) catch $line'
+}
+```
+
 ## Minimal example
 
 This would be a simple yaml file with a get request:

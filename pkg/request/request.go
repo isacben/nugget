@@ -127,7 +127,7 @@ func parse(s string, stack map[string]string) string {
 	return buf.String()
 }
 
-func run(prog Prog) {
+func run(prog Prog, verbose bool) {
 	token := getToken()
 
 	// prepare stack map with values for the template
@@ -137,7 +137,6 @@ func run(prog Prog) {
 
 		stack["uuid"] = uuid.NewString()
 
-		fmt.Printf("%s\n", step.Name)
 		step.Url = parse(step.Url, stack)
 		//fmt.Printf("%s\n", step.Url)
 
@@ -184,10 +183,13 @@ func run(prog Prog) {
 			os.Exit(1)
 		}
 
-		resHeader, _ := json.Marshal(res.Header)
-		fmt.Printf("%v\n", string(resHeader))
+		fmt.Printf("%s\n", step.Name)
+		if verbose {
+			resHeader, _ := json.Marshal(res.Header)
+			fmt.Printf("%v\n", string(resHeader))
+		}
+
 		fmt.Printf("%v\n", string(body))
-		//output.ResHeaders = res.Header
 
 		if step.Capture != nil {
 			for key, val := range step.Capture {
@@ -248,7 +250,7 @@ func PrintErr(errors []error) {
 	fmt.Print(string(outputPrint))
 }
 
-func Execute(fileName string) {
+func Execute(fileName string, verbose bool) {
 
 	// load yaml file
 	prog := Prog{}
@@ -264,6 +266,6 @@ func Execute(fileName string) {
 	}
 
 	validate(prog)
-	run(prog)
+	run(prog, verbose)
 
 }
