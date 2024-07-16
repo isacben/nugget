@@ -183,6 +183,9 @@ func run(prog Prog) {
 			fmt.Printf("client: could not read response body: %s\n", err)
 			os.Exit(1)
 		}
+
+		resHeader, _ := json.Marshal(res.Header)
+		fmt.Printf("%v\n", string(resHeader))
 		fmt.Printf("%v\n", string(body))
 		//output.ResHeaders = res.Header
 
