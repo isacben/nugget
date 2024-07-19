@@ -127,7 +127,7 @@ func parse(s string, stack map[string]string) string {
 	return buf.String()
 }
 
-func run(prog Prog, verbose bool) {
+func run(prog Prog, jsonFlag bool, quiet bool) {
 	token := getToken()
 
 	// prepare stack map with values for the template
@@ -183,13 +183,27 @@ func run(prog Prog, verbose bool) {
 			os.Exit(1)
 		}
 
-		fmt.Printf("%s\n", step.Name)
-		if verbose {
-			resHeader, _ := json.Marshal(res.Header)
-			fmt.Printf("%v\n", string(resHeader))
+		if !quiet {
+			fmt.Printf("%s\n", step.Name)
 		}
 
-		fmt.Printf("%v\n", string(body))
+		//if verbose {
+		//	resHeader, _ := json.Marshal(res.Header)
+		//	fmt.Printf("%v\n", string(resHeader))
+		//}
+
+		if jsonFlag {
+			var bodyJsonOutput bytes.Buffer
+			err := json.Indent(&bodyJsonOutput, body, "", "    ")
+			if err != nil {
+				fmt.Printf("could not print indented body: %v", err)
+				fmt.Printf("%v\n", string(body))
+			} else {
+				fmt.Printf("%v\n", bodyJsonOutput.String())
+			}
+		} else {
+			fmt.Printf("%v\n", string(body))
+		}
 
 		if step.Capture != nil {
 			for key, val := range step.Capture {
@@ -228,29 +242,7 @@ func run(prog Prog, verbose bool) {
 	}
 }
 
-func PrintErr(errors []error) {
-	type Output struct {
-		Status string   `json:"status"`
-		Data   []string `json:"data"`
-	}
-
-	output := Output{
-		Status: "error",
-		Data:   []string{},
-	}
-
-	for _, myerr := range errors {
-		output.Data = append(output.Data, myerr.Error())
-	}
-
-	outputPrint, err := json.Marshal(output)
-	if err != nil {
-		fmt.Println(err)
-	}
-	fmt.Print(string(outputPrint))
-}
-
-func Execute(fileName string, verbose bool) {
+func Execute(fileName string, jsonFlag bool, quiet bool) {
 
 	// load yaml file
 	prog := Prog{}
@@ -266,6 +258,6 @@ func Execute(fileName string, verbose bool) {
 	}
 
 	validate(prog)
-	run(prog, verbose)
+	run(prog, jsonFlag, quiet)
 
 }
