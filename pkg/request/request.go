@@ -23,6 +23,7 @@ type Step struct {
 	Name    string            `yaml:"name"`
 	Method  string            `yaml:"method"`
 	Url     string            `yaml:"url"`
+	Http    int               `yaml:"http"`
 	Header  map[string]string `yaml:"header"`
 	Body    string            `json:"body"`
 	Capture map[string]string `yaml:"capture"`
@@ -31,86 +32,6 @@ type Step struct {
 type AuthJson struct {
 	Expires_at string `json:"expires_at"`
 	Token      string `json:"token"`
-}
-
-type Output struct {
-	Name       string              `json:"name"`
-	Url        string              `json:"url"`
-	ReqBody    json.RawMessage     `json:"request_body"`
-	ReqHeaders map[string][]string `json:"request_header"`
-	ResHeaders map[string][]string `json:"response_header"`
-	ResBody    json.RawMessage     `json:"response_body"`
-}
-
-var clientId = os.Getenv("clientId")
-var apiKey = os.Getenv("apiKey")
-
-func validate(prog Prog) {
-	err := false
-
-	if prog.Steps == nil {
-		fmt.Printf("no steps found\n")
-		os.Exit(1)
-	}
-
-	for k, step := range prog.Steps {
-		if step.Name == "" {
-			fmt.Printf("missing keyword in step %v: name\n", k+1)
-			err = true
-		}
-		if step.Method == "" {
-			fmt.Printf("missing keyword in step %v: method\n", k+1)
-			err = true
-		}
-		if step.Url == "" {
-			fmt.Printf("missing keyword in step %v: url\n", k+1)
-			err = true
-		}
-		if step.Body != "" {
-			var v interface{}
-			data := []byte(step.Body)
-			jerr := json.Unmarshal(data, &v)
-			if jerr != nil {
-				fmt.Printf("syntax error in step %v body near: `%s`\n", k+1, string(data[jerr.(*json.SyntaxError).Offset-1:]))
-				err = true
-			}
-		}
-	}
-
-	if err {
-		os.Exit(1)
-	}
-}
-
-func getToken() string {
-	requestURL := fmt.Sprintf("%s/api/v1/authentication/login", os.Getenv("apiUrl"))
-	req, err := http.NewRequest("POST", requestURL, nil)
-
-	req.Header = http.Header{
-		"Content-Type": {"application/json"},
-		"x-client-id":  {clientId},
-		"x-api-key":    {apiKey},
-	}
-
-	if err != nil {
-		fmt.Printf("client: could not create request: %s\n", err)
-		os.Exit(1)
-	}
-
-	res, err := http.DefaultClient.Do(req)
-	if err != nil {
-		fmt.Printf("client: error making http request: %s\n", err)
-		os.Exit(1)
-	}
-
-	defer res.Body.Close()
-
-	var authJson AuthJson
-	if err := json.NewDecoder(res.Body).Decode(&authJson); err != nil {
-		panic(err)
-	}
-
-	return authJson.Token
 }
 
 func parse(s string, stack map[string]string) string {
@@ -128,7 +49,11 @@ func parse(s string, stack map[string]string) string {
 }
 
 func run(prog Prog, jsonFlag bool, quiet bool) {
-	token := getToken()
+	token, err := getToken()
+	if err != nil {
+		fmt.Printf("%s", err)
+		os.Exit(1)
+	}
 
 	// prepare stack map with values for the template
 	stack := make(map[string]string)
@@ -205,6 +130,16 @@ func run(prog Prog, jsonFlag bool, quiet bool) {
 			fmt.Printf("%v\n", string(body))
 		}
 
+		if step.Http > 0 {
+			respCode := res.StatusCode
+			if respCode != step.Http {
+				fmt.Printf("\033[0;31merror\033[0m: Expected %v but got %v\n", step.Http, res.StatusCode)
+				os.Exit(1)
+			}
+
+			fmt.Printf("ok: Status code is %v\n", res.StatusCode)
+		}
+
 		if step.Capture != nil {
 			for key, val := range step.Capture {
 				// key = variable name from the capture: customer_id from "customer_id: .id" in the yaml file
@@ -239,25 +174,32 @@ func run(prog Prog, jsonFlag bool, quiet bool) {
 				}
 			}
 		}
+
+		fmt.Println()
 	}
 }
 
 func Execute(fileName string, jsonFlag bool, quiet bool) {
-
-	// load yaml file
 	prog := Prog{}
 
 	yamlFile, err := os.ReadFile(fileName)
 	if err != nil {
 		fmt.Printf("yamlFile.Get err #%v ", err)
 	}
+
 	err = yaml.Unmarshal(yamlFile, &prog)
 	if err != nil {
 		fmt.Printf("invalid file format: %v\n", err)
 		os.Exit(1)
 	}
 
-	validate(prog)
-	run(prog, jsonFlag, quiet)
+	errs := validate(prog)
+	if errs != nil {
+		for _, err := range errs {
+			fmt.Println(err)
+		}
+		os.Exit(1)
+	}
 
+	run(prog, jsonFlag, quiet)
 }
