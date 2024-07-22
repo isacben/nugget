@@ -12,7 +12,7 @@ Test REST APIs from the command line.
 ## Usage
 
 ```bash
-% nugget run your-requests-file.yaml
+% nugget run requests.yaml
 ```
 
 You can use `jq` to pretty print the json. This will print non json lines, as well as pretty print the json output:
@@ -130,6 +130,7 @@ nugget has the following keywords:
 - `steps`: entry point of the yaml file to define the list of requests
 - `method`: type of requests (GET, POST, PUT, DELETE)
 - `url`: the endpoint url
+- `http`: http response code assert
 - `header`: list of headers
 - `capture`: list of variables to capture from the response
 

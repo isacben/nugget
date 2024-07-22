@@ -7,10 +7,10 @@ import (
 	"os"
 )
 
-var clientId = os.Getenv("clientId")
-var apiKey = os.Getenv("apiKey")
-
 func getToken() (string, error) {
+	clientId := os.Getenv("clientId")
+	apiKey := os.Getenv("apiKey")
+
 	requestURL := fmt.Sprintf("%s/api/v1/authentication/login", os.Getenv("apiUrl"))
 	req, err := http.NewRequest("POST", requestURL, nil)
 

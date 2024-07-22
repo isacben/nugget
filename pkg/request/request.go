@@ -48,33 +48,32 @@ func parse(s string, stack map[string]string) string {
 	return buf.String()
 }
 
-func run(prog Prog, jsonFlag bool, quiet bool) {
+func run(prog Prog, jsonFlag bool, quiet bool) error {
 	token, err := getToken()
 	if err != nil {
-		fmt.Printf("%s", err)
-		os.Exit(1)
+		return fmt.Errorf("authentication error: %s", err)
 	}
 
 	// prepare stack map with values for the template
 	stack := make(map[string]string)
 
 	for _, step := range prog.Steps {
-
 		stack["uuid"] = uuid.NewString()
 
+		// TODO: fix parse() panic
 		step.Url = parse(step.Url, stack)
-		//fmt.Printf("%s\n", step.Url)
 
-		var reqBody *strings.Reader
-
+		reqBody := strings.NewReader("")
 		if step.Body != "" {
 			step.Body = parse(step.Body, stack)
 			reqBody = strings.NewReader(step.Body)
-		} else {
-			reqBody = strings.NewReader("")
 		}
 
 		req, err := http.NewRequest(step.Method, step.Url, reqBody)
+		if err != nil {
+			return fmt.Errorf("client: could not create request: %s", err)
+		}
+
 		authHeader := fmt.Sprintf("Bearer %s", token)
 		req.Header = http.Header{
 			"Content-Type":  {"application/json"},
@@ -88,15 +87,9 @@ func run(prog Prog, jsonFlag bool, quiet bool) {
 			}
 		}
 
-		if err != nil {
-			fmt.Printf("client: could not create request: %s\n", err)
-			os.Exit(1)
-		}
-
 		res, err := http.DefaultClient.Do(req)
 		if err != nil {
-			fmt.Printf("client: error making http request: %s\n", err)
-			os.Exit(1)
+			return fmt.Errorf("client: error making http request: %s", err)
 		}
 
 		defer res.Body.Close()
@@ -104,12 +97,11 @@ func run(prog Prog, jsonFlag bool, quiet bool) {
 		// Response body
 		body, err := io.ReadAll(res.Body)
 		if err != nil {
-			fmt.Printf("client: could not read response body: %s\n", err)
-			os.Exit(1)
+			return fmt.Errorf("client: could not read response body: %s", err)
 		}
 
 		if !quiet {
-			fmt.Printf("%s\n", step.Name)
+			fmt.Printf("step: %s\n", step.Name)
 		}
 
 		//if verbose {
@@ -117,6 +109,7 @@ func run(prog Prog, jsonFlag bool, quiet bool) {
 		//	fmt.Printf("%v\n", string(resHeader))
 		//}
 
+		// TODO: simplify this
 		if jsonFlag {
 			var bodyJsonOutput bytes.Buffer
 			err := json.Indent(&bodyJsonOutput, body, "", "    ")
@@ -133,11 +126,12 @@ func run(prog Prog, jsonFlag bool, quiet bool) {
 		if step.Http > 0 {
 			respCode := res.StatusCode
 			if respCode != step.Http {
-				fmt.Printf("\033[0;31merror\033[0m: Expected %v but got %v\n", step.Http, res.StatusCode)
-				os.Exit(1)
+				return fmt.Errorf("\033[0;31merror\033[0m: Expected %v but got %v", step.Http, res.StatusCode)
 			}
 
-			fmt.Printf("ok: Status code is %v\n", res.StatusCode)
+			if !quiet {
+				fmt.Printf("ok: Status code is %v\n", res.StatusCode)
+			}
 		}
 
 		if step.Capture != nil {
@@ -174,9 +168,8 @@ func run(prog Prog, jsonFlag bool, quiet bool) {
 				}
 			}
 		}
-
-		fmt.Println()
 	}
+	return nil
 }
 
 func Execute(fileName string, jsonFlag bool, quiet bool) {
@@ -201,5 +194,9 @@ func Execute(fileName string, jsonFlag bool, quiet bool) {
 		os.Exit(1)
 	}
 
-	run(prog, jsonFlag, quiet)
+	rerr := run(prog, jsonFlag, quiet)
+	if rerr != nil {
+		fmt.Printf("%v\n", rerr)
+	}
+
 }
