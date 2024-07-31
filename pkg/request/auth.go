@@ -7,6 +7,11 @@ import (
 	"os"
 )
 
+type AuthJson struct {
+	Expires_at string `json:"expires_at"`
+	Token      string `json:"token"`
+}
+
 func getToken() (string, error) {
 	clientId := os.Getenv("clientId")
 	apiKey := os.Getenv("apiKey")

@@ -29,11 +29,6 @@ type Step struct {
 	Capture map[string]string `yaml:"capture"`
 }
 
-type AuthJson struct {
-	Expires_at string `json:"expires_at"`
-	Token      string `json:"token"`
-}
-
 func parse(s string, stack map[string]string) string {
 	urlTemplate, err := template.New("urlTemplate").Parse(s)
 	if err != nil {
@@ -81,9 +76,9 @@ func run(prog Prog, jsonFlag bool, quiet bool) error {
 		}
 
 		if step.Header != nil {
-			for key, val := range step.Header {
-				val = parse(val, stack)
-				req.Header.Add(key, val)
+			for k, v := range step.Header {
+				v = parse(v, stack)
+				req.Header.Add(k, v)
 			}
 		}
 
@@ -100,14 +95,15 @@ func run(prog Prog, jsonFlag bool, quiet bool) error {
 			return fmt.Errorf("client: could not read response body: %s", err)
 		}
 
-		if !quiet {
-			fmt.Printf("step: %s\n", step.Name)
-		}
-
 		//if verbose {
 		//	resHeader, _ := json.Marshal(res.Header)
 		//	fmt.Printf("%v\n", string(resHeader))
 		//}
+
+		if !quiet {
+			fmt.Printf("step: %s\n", step.Name)
+			fmt.Printf("response body:\n")
+		}
 
 		// TODO: simplify this
 		if jsonFlag {
@@ -126,11 +122,11 @@ func run(prog Prog, jsonFlag bool, quiet bool) error {
 		if step.Http > 0 {
 			respCode := res.StatusCode
 			if respCode != step.Http {
-				return fmt.Errorf("\033[0;31merror\033[0m: Expected %v but got %v", step.Http, res.StatusCode)
+				return fmt.Errorf("\033[0;31merror\033[0m: expected %v but got %v", step.Http, res.StatusCode)
 			}
 
 			if !quiet {
-				fmt.Printf("ok: Status code is %v\n", res.StatusCode)
+				fmt.Printf("\u001b[32;1msuccess\033[0m: status code is %v\n", res.StatusCode)
 			}
 		}
 
@@ -177,7 +173,7 @@ func Execute(fileName string, jsonFlag bool, quiet bool) {
 
 	yamlFile, err := os.ReadFile(fileName)
 	if err != nil {
-		fmt.Printf("yamlFile.Get err #%v ", err)
+		fmt.Printf("could not read file: %v\n", err)
 	}
 
 	err = yaml.Unmarshal(yamlFile, &prog)
