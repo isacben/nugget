@@ -43,6 +43,22 @@ func parse(s string, stack map[string]string) string {
 	return buf.String()
 }
 
+func formatString(body []byte, jsonFlag bool) string {
+	// if requested, try to return the body string formated as json
+	if jsonFlag {
+		var bodyJsonOutput bytes.Buffer
+
+		err := json.Indent(&bodyJsonOutput, body, "", "  ")
+		if err != nil {
+			return string(body)
+		}
+
+		return bodyJsonOutput.String()
+	}
+
+	return string(body)
+}
+
 func run(prog Prog, jsonFlag bool, quiet bool) error {
 	token, err := getToken()
 	if err != nil {
@@ -102,22 +118,10 @@ func run(prog Prog, jsonFlag bool, quiet bool) error {
 
 		if !quiet {
 			fmt.Printf("step: %s\n", step.Name)
-			fmt.Printf("response body:\n")
+			fmt.Printf("response data:\n")
 		}
 
-		// TODO: simplify this
-		if jsonFlag {
-			var bodyJsonOutput bytes.Buffer
-			err := json.Indent(&bodyJsonOutput, body, "", "    ")
-			if err != nil {
-				fmt.Printf("could not print indented body: %v", err)
-				fmt.Printf("%v\n", string(body))
-			} else {
-				fmt.Printf("%v\n", bodyJsonOutput.String())
-			}
-		} else {
-			fmt.Printf("%v\n", string(body))
-		}
+		fmt.Println(formatString(body, jsonFlag))
 
 		if step.Http > 0 {
 			respCode := res.StatusCode
