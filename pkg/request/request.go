@@ -111,11 +111,6 @@ func run(prog Prog, jsonFlag bool, headerFlag bool, quiet bool) error {
 			return fmt.Errorf("client: could not read response body: %s", err)
 		}
 
-		//if verbose {
-		//	resHeader, _ := json.Marshal(res.Header)
-		//	fmt.Printf("%v\n", string(resHeader))
-		//}
-
 		if !quiet {
 			fmt.Printf("step: %s\n", step.Name)
 			fmt.Printf("response data:\n")
