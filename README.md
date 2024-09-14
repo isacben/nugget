@@ -1,13 +1,13 @@
 # nugget
 
-Test REST APIs from the command line.
+Run API requests from the command line.
 
 ## Features
 
 - Define the requests in a yaml file
 - Capture values from the response
-- Chain requests to implement full API use cases (no programming needed!)
-- Own your files: no cloud storage
+- Chain requests to implement full API use cases
+- Own your files, no cloud storage
 
 ## Usage
 
@@ -15,18 +15,16 @@ Test REST APIs from the command line.
 % nugget run requests.yaml
 ```
 
-You can use `jq` to pretty print the json. This will print non json lines, as well as pretty print the json output:
+Use the `--json` flag to pretty print the json output.
 
 ```bash
-% nugget run requests.yaml | jq -Rr '. as $line | try (fromjson) catch $line'
+% nugget run requests.yaml --json
 ```
 
-You can add a function to your profile file to shorten the long jq command and replance it with just `jqq`:
+Pass the `-H` flag to include the response headers in the output.
 
 ```bash
-jqq(){
-  jq -Rr '. as $line | try (fromjson) catch $line'
-}
+% nuget run requests.yaml -H --json
 ```
 
 ## Minimal example
@@ -51,6 +49,18 @@ steps:
     url: http://mytodo.com/api/v1/todos
     header:
       some-header: some-value
+```
+
+## Add assertions
+
+Use the `http` keyword to assert the status code of the response.
+
+```yaml
+steps:
+  - name: Get TODO list
+    method: GET
+    url: http://mytodo.com/api/v1/todos
+    http: 200
 ```
 
 ## Capture values
@@ -91,7 +101,7 @@ To capture values, use the path of the value you want to capture from the respon
 
 You can use the captured values adding the variable name in a "template" like fashion: `{{ .variable-name }}`.
 
-The capture values can be use in the following areas:
+The captured values can be use in the following areas:
 
 - The body json
 - The ulr
