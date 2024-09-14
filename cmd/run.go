@@ -10,6 +10,7 @@ import (
 )
 
 var JsonFlag bool
+var Header bool
 var Quiet bool
 
 // runCmd represents the run command
@@ -19,7 +20,7 @@ var runCmd = &cobra.Command{
 	Long:  `Run the API requests defined in a yaml file. This command will execute all the requests listed in a signle file.`,
 	Run: func(cmd *cobra.Command, args []string) {
 		fileName := args[0]
-		request.Execute(fileName, JsonFlag, Quiet)
+		request.Execute(fileName, JsonFlag, Header, Quiet)
 	},
 }
 
@@ -27,8 +28,9 @@ func init() {
 	rootCmd.AddCommand(runCmd)
 
 	// Here you will define your flags and configuration settings.
-	runCmd.Flags().BoolVar(&JsonFlag, "json", false, "indent json output")
-	runCmd.Flags().BoolVarP(&Quiet, "quiet", "q", false, "display less output")
+	runCmd.PersistentFlags().BoolVar(&JsonFlag, "json", false, "indent json output")
+	runCmd.PersistentFlags().BoolVarP(&Header, "header", "H", false, "print response headers")
+	runCmd.PersistentFlags().BoolVarP(&Quiet, "quiet", "q", false, "display less output")
 
 	// Cobra supports Persistent Flags which will work for this command
 	// and all subcommands, e.g.:

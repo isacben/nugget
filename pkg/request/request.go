@@ -59,7 +59,7 @@ func formatString(body []byte, jsonFlag bool) string {
 	return string(body)
 }
 
-func run(prog Prog, jsonFlag bool, quiet bool) error {
+func run(prog Prog, jsonFlag bool, headerFlag bool, quiet bool) error {
 	token, err := getToken()
 	if err != nil {
 		return fmt.Errorf("authentication error: %s", err)
@@ -121,7 +121,21 @@ func run(prog Prog, jsonFlag bool, quiet bool) error {
 			fmt.Printf("response data:\n")
 		}
 
+		// print response data
 		fmt.Println(formatString(body, jsonFlag))
+
+		if headerFlag {
+			resHeader, err := json.Marshal(res.Header)
+			if err != nil {
+				return fmt.Errorf("client: could not process response header: %s", err)
+			}
+
+			if !quiet {
+				fmt.Printf("response header:\n")
+			}
+
+			fmt.Println(formatString(resHeader, jsonFlag))
+		}
 
 		if step.Http > 0 {
 			respCode := res.StatusCode
@@ -134,6 +148,7 @@ func run(prog Prog, jsonFlag bool, quiet bool) error {
 			}
 		}
 
+		// TODO: simplify this and remove from function
 		if step.Capture != nil {
 			for key, val := range step.Capture {
 				// key = variable name from the capture: customer_id from "customer_id: .id" in the yaml file
@@ -172,7 +187,7 @@ func run(prog Prog, jsonFlag bool, quiet bool) error {
 	return nil
 }
 
-func Execute(fileName string, jsonFlag bool, quiet bool) {
+func Execute(fileName string, jsonFlag bool, header bool, quiet bool) {
 	prog := Prog{}
 
 	yamlFile, err := os.ReadFile(fileName)
@@ -194,7 +209,7 @@ func Execute(fileName string, jsonFlag bool, quiet bool) {
 		os.Exit(1)
 	}
 
-	rerr := run(prog, jsonFlag, quiet)
+	rerr := run(prog, jsonFlag, header, quiet)
 	if rerr != nil {
 		fmt.Printf("%v\n", rerr)
 	}
