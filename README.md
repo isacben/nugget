@@ -32,10 +32,9 @@ Pass the `-H` flag to include the response headers in the output.
 This would be a simple yaml file with a get request:
 
 ```yaml
-steps:
-  - name: Get TODO list
-    method: GET
-    url: http://mytodo.com/api/v1/todos
+- name: Get TODO list
+  method: GET
+  url: http://mytodo.com/api/v1/todos
 ```
 
 ## Add headers
@@ -43,12 +42,11 @@ steps:
 You can add additional headers. nugget already takes care of the `Content-type` and `Authorization` headers (it uses Bearer Authentication).
 
 ```yaml
-steps:
-  - name: Get TODO list
-    method: GET
-    url: http://mytodo.com/api/v1/todos
-    header:
-      some-header: some-value
+- name: Get TODO list
+  method: GET
+  url: http://mytodo.com/api/v1/todos
+  header:
+    some-header: some-value
 ```
 
 ## Add assertions
@@ -56,11 +54,10 @@ steps:
 Use the `http` keyword to assert the status code of the response.
 
 ```yaml
-steps:
-  - name: Get TODO list
-    method: GET
-    url: http://mytodo.com/api/v1/todos
-    http: 200
+- name: Get TODO list
+  method: GET
+  url: http://mytodo.com/api/v1/todos
+  http: 200
 ```
 
 ## Capture values
@@ -68,18 +65,17 @@ steps:
 Use the capture keyword to capture a list of values from the response:
 
 ```yaml
-steps:
-  - name: Create TODO item
-    method: POST 
-    url: https://mytodos.com/api/v1/todos/create
-    body: |
-      {
-        "name": "Go shopping",
-        "due": "2024-06-09"
-      }
-    capture:
-      todo_id: .id
-      todo_name: .name
+- name: Create TODO item
+  method: POST 
+  url: https://mytodos.com/api/v1/todos/create
+  body: |
+    {
+      "name": "Go shopping",
+      "due": "2024-06-09"
+    }
+  capture:
+    todo_id: .id
+    todo_name: .name
 ```
 
 To capture values, use the path of the value you want to capture from the response. For example, `.address.country` if you need to capture the country in the following json:
@@ -112,36 +108,36 @@ The captured values can be use in the following areas:
 To chain several requests, just add more steps in the yaml file starting with the `name` of the step. Use the captured values as explained before.
 
 ```yaml
-steps:
-  - name: Create TODO item
-    method: POST
-    url: https://mytodos.com/api/v1/todos/create
-    body: |
-      {
-        "name": "Go shopping",
-        "due": "2024-06-09"
-      }
-    capture:
-      todo_id: .id
+- name: Create TODO item
+  method: POST
+  url: https://mytodos.com/api/v1/todos/create
+  body: |
+    {
+      "name": "Go shopping",
+      "due": "2024-06-09"
+    }
+  capture:
+    todo_id: .id
   
-  - name: Update the previous TODO
-    method: PUT
-    url: https://mytodos.com/api/v1/todos/{{ .todo_id }}/update
-    body: |
-      {
-        "name": "Go grocery shopping"
-      } 
+- name: Update the previous TODO
+  method: PUT
+  url: https://mytodos.com/api/v1/todos/{{ .todo_id }}/update
+  body: |
+    {
+      "name": "Go grocery shopping"
+    } 
 ```
 
 ## Reference
 
 nugget has the following keywords:
 
-- `steps`: entry point of the yaml file to define the list of requests
+- `name`: name of the request
 - `method`: type of requests (GET, POST, PUT, DELETE)
 - `url`: the endpoint url
 - `http`: http response code assert
 - `header`: list of headers
+- `body`: body of the request
 - `capture`: list of variables to capture from the response
 
 And the following pre-defined template variables:
