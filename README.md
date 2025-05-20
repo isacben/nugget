@@ -12,19 +12,19 @@ Run API requests from the command line.
 ## Usage
 
 ```bash
-% nugget run requests.yaml
+% nugget requests.yaml
 ```
 
 Use the `--raw` flag to print the raw response.
 
 ```bash
-% nugget run requests.yaml --raw
+% nugget requests.yaml --raw
 ```
 
 Pass the `-H` flag to include the response headers in the output.
 
 ```bash
-% nuget run requests.yaml -H
+% nugget requests.yaml -H
 ```
 
 ## Minimal example

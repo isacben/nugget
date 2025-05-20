@@ -16,7 +16,7 @@ import (
 )
 
 type Prog struct {
-	Steps []Step `yaml:"steps"`
+	Steps []Step
 }
 
 type Step struct {
@@ -58,7 +58,7 @@ func formatString(body []byte, rawFlag bool) string {
 	return bodyJsonOutput.String()
 }
 
-func run(prog Prog, jsonFlag bool, headerFlag bool, quiet bool) error {
+func run(prog []Step, rawFlag bool, headerFlag bool, quiet bool) error {
 	token, err := getToken()
 	if err != nil {
 		return fmt.Errorf("authentication error: %s", err)
@@ -67,7 +67,7 @@ func run(prog Prog, jsonFlag bool, headerFlag bool, quiet bool) error {
 	// prepare stack map with values for the template
 	stack := make(map[string]string)
 
-	for _, step := range prog.Steps {
+	for _, step := range prog {
 		stack["uuid"] = uuid.NewString()
 
 		// TODO: fix parse() panic
@@ -116,7 +116,7 @@ func run(prog Prog, jsonFlag bool, headerFlag bool, quiet bool) error {
 		}
 
 		// print response data
-		fmt.Println(formatString(body, jsonFlag))
+		fmt.Println(formatString(body, rawFlag))
 
 		if headerFlag {
 			resHeader, err := json.Marshal(res.Header)
@@ -128,7 +128,7 @@ func run(prog Prog, jsonFlag bool, headerFlag bool, quiet bool) error {
 				fmt.Printf("response header:\n")
 			}
 
-			fmt.Println(formatString(resHeader, jsonFlag))
+			fmt.Println(formatString(resHeader, rawFlag))
 		}
 
 		if step.Http > 0 {
@@ -181,8 +181,8 @@ func run(prog Prog, jsonFlag bool, headerFlag bool, quiet bool) error {
 	return nil
 }
 
-func Execute(fileName string, jsonFlag bool, header bool, quiet bool) {
-	prog := Prog{}
+func Execute(fileName string, rawFlag bool, header bool, quiet bool) {
+	prog := []Step{}
 
 	yamlFile, err := os.ReadFile(fileName)
 	if err != nil {
@@ -203,7 +203,7 @@ func Execute(fileName string, jsonFlag bool, header bool, quiet bool) {
 		os.Exit(1)
 	}
 
-	rerr := run(prog, jsonFlag, header, quiet)
+	rerr := run(prog, rawFlag, header, quiet)
 	if rerr != nil {
 		fmt.Printf("%v\n", rerr)
 	}
