@@ -43,20 +43,19 @@ func parse(s string, stack map[string]string) string {
 	return buf.String()
 }
 
-func formatString(body []byte, jsonFlag bool) string {
+func formatString(body []byte, rawFlag bool) string {
 	// if requested, try to return the body string formated as json
-	if jsonFlag {
-		var bodyJsonOutput bytes.Buffer
-
-		err := json.Indent(&bodyJsonOutput, body, "", "  ")
-		if err != nil {
-			return string(body)
-		}
-
-		return bodyJsonOutput.String()
+	if rawFlag {
+		return string(body)
 	}
 
-	return string(body)
+	var bodyJsonOutput bytes.Buffer
+	err := json.Indent(&bodyJsonOutput, body, "", "  ")
+	if err != nil {
+		return string(body)
+	}
+
+	return bodyJsonOutput.String()
 }
 
 func run(prog Prog, jsonFlag bool, headerFlag bool, quiet bool) error {

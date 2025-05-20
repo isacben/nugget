@@ -15,10 +15,10 @@ Run API requests from the command line.
 % nugget run requests.yaml
 ```
 
-Use the `--json` flag to pretty print the json output.
+Use the `--raw` flag to print the raw response.
 
 ```bash
-% nugget run requests.yaml --json
+% nugget run requests.yaml --raw
 ```
 
 Pass the `-H` flag to include the response headers in the output.
