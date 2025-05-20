@@ -5,14 +5,14 @@ import (
 	"fmt"
 )
 
-func validate(prog Prog) []error {
+func validate(prog []Step) []error {
 	var errs []error
 
-	if prog.Steps == nil {
+	if prog == nil {
 		errs = append(errs, fmt.Errorf("no steps found"))
 	}
 
-	for k, step := range prog.Steps {
+	for k, step := range prog {
 		if step.Name == "" {
 			errs = append(errs, fmt.Errorf("missing keyword in step %v: name", k+1))
 		}
