@@ -5,6 +5,7 @@ package cmd
 
 import (
 	"fmt"
+	"nugget/pkg/request"
 	"os"
 
 	"github.com/spf13/cobra"
@@ -12,6 +13,9 @@ import (
 )
 
 var cfgFile string
+var RawFlag bool
+var Header bool
+var Quiet bool
 
 // rootCmd represents the base command when called without any subcommands
 var rootCmd = &cobra.Command{
@@ -22,6 +26,14 @@ This application lets you chain API requests defined in configuration files.`,
 	// Uncomment the following line if your bare application
 	// has an action associated with it:
 	// Run: func(cmd *cobra.Command, args []string) { },
+	Run: func(cmd *cobra.Command, args []string) {
+		if len(args) == 0 {
+			fmt.Println("Please provide a file name.")
+			os.Exit(1)
+		}
+		fileName := args[0]
+		request.Execute(fileName, RawFlag, Header, Quiet)
+	},
 }
 
 // Execute adds all child commands to the root command and sets flags appropriately.
@@ -45,6 +57,10 @@ func init() {
 	// Cobra also supports local flags, which will only run
 	// when this action is called directly.
 	rootCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
+
+	rootCmd.PersistentFlags().BoolVar(&RawFlag, "raw", false, "raw output")
+	rootCmd.PersistentFlags().BoolVarP(&Header, "header", "H", false, "print response headers")
+	rootCmd.PersistentFlags().BoolVarP(&Quiet, "quiet", "q", false, "display less output")
 }
 
 // initConfig reads in config file and ENV variables if set.
