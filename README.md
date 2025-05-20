@@ -24,7 +24,7 @@ Use the `--raw` flag to print the raw response.
 Pass the `-H` flag to include the response headers in the output.
 
 ```bash
-% nuget run requests.yaml -H --json
+% nuget run requests.yaml -H
 ```
 
 ## Minimal example
@@ -104,7 +104,7 @@ You can use the captured values adding the variable name in a "template" like fa
 The captured values can be use in the following areas:
 
 - The body json
-- The ulr
+- The url
 - The header, wrapping the template variable in quoutes: `"{{ .some-header }}"`
 
 ## Chain several requests (use captured values)
