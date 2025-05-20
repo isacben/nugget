@@ -15,10 +15,6 @@ import (
 	"gopkg.in/yaml.v3"
 )
 
-type Prog struct {
-	Steps []Step
-}
-
 type Step struct {
 	Name    string            `yaml:"name"`
 	Method  string            `yaml:"method"`
