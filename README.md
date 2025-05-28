@@ -118,6 +118,7 @@ To chain several requests, just add more steps in the yaml file starting with th
     }
   capture:
     todo_id: .id
+  wait: 1000
   
 - name: Update the previous TODO
   method: PUT
@@ -139,6 +140,7 @@ nugget has the following keywords:
 - `header`: list of headers
 - `body`: body of the request
 - `capture`: list of variables to capture from the response
+- `wait`: wait for a certain amount of milliseconds before the next request
 
 And the following pre-defined template variables:
 
