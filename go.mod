@@ -1,4 +1,4 @@
-module nugget
+module github.com/isacben/nugget
 
 go 1.22.3
 
