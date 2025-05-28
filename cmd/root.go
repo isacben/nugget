@@ -5,8 +5,9 @@ package cmd
 
 import (
 	"fmt"
-	"nugget/pkg/request"
 	"os"
+
+	"github.com/isacben/nugget/runner"
 
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
@@ -16,6 +17,7 @@ var cfgFile string
 var RawFlag bool
 var Header bool
 var Quiet bool
+var ParserFlag bool
 
 // rootCmd represents the base command when called without any subcommands
 var rootCmd = &cobra.Command{
@@ -32,7 +34,7 @@ This application lets you chain API requests defined in configuration files.`,
 			os.Exit(1)
 		}
 		fileName := args[0]
-		request.Execute(fileName, RawFlag, Header, Quiet)
+		runner.Execute(fileName, RawFlag, Header, Quiet, ParserFlag)
 	},
 }
 
@@ -61,6 +63,7 @@ func init() {
 	rootCmd.PersistentFlags().BoolVar(&RawFlag, "raw", false, "raw output")
 	rootCmd.PersistentFlags().BoolVarP(&Header, "header", "H", false, "print response headers")
 	rootCmd.PersistentFlags().BoolVarP(&Quiet, "quiet", "q", false, "display less output")
+	rootCmd.PersistentFlags().BoolVarP(&ParserFlag, "parser", "p", false, "use parser (experimental)")
 }
 
 // initConfig reads in config file and ENV variables if set.

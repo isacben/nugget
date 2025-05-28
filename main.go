@@ -3,7 +3,7 @@ Copyright © 2024 Isaac Benitez
 */
 package main
 
-import "nugget/cmd"
+import "github.com/isacben/nugget/cmd"
 
 func main() {
 	cmd.Execute()
