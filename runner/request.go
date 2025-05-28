@@ -18,6 +18,7 @@ type Step struct {
 	Header  map[string]string `yaml:"header"`
 	Body    string            `json:"body"`
 	Capture map[string]string `yaml:"capture"`
+	Wait    int               `yaml:"wait"`
 }
 
 func parse(s string, stack map[string]string) string {

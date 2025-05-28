@@ -6,6 +6,7 @@ import (
 	"io"
 	"net/http"
 	"strings"
+	"time"
 
 	"github.com/google/uuid"
 	"github.com/itchyny/gojq"
@@ -129,6 +130,21 @@ func run(prog []Step, rawFlag bool, headerFlag bool, quiet bool) error {
 					stack[key] = fmt.Sprintf("%v", v)
 				}
 			}
+		}
+
+		if step.Wait > 0 {
+			chars := []string{"|", "/", "-", "\\"}
+			duration := time.Duration(step.Wait) * time.Millisecond // Total duration of the animation
+
+			startTime := time.Now()
+
+			for time.Since(startTime) < duration {
+				for _, char := range chars {
+					fmt.Printf("waiting... %s\r", char) // \r to overwrite the previous character
+					time.Sleep(100 * time.Millisecond)  // Adjust delay for speed
+				}
+			}
+			fmt.Println("\rwaiting...  ")
 		}
 	}
 	return nil
