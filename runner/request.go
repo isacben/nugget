@@ -6,20 +6,21 @@ import (
 	"fmt"
 	"html/template"
 	"os"
-
-	"gopkg.in/yaml.v3"
+	"strings"
 )
 
 type Step struct {
-	Name    string            `yaml:"name"`
-	Method  string            `yaml:"method"`
-	Url     string            `yaml:"url"`
-	Http    int               `yaml:"http"`
-	Header  map[string]string `yaml:"header"`
-	Body    string            `json:"body"`
-	Capture map[string]string `yaml:"capture"`
-	Wait    int               `yaml:"wait"`
+	Name    string
+	Method  string
+	Url     string
+	Http    int
+	Headers  []keyValue
+	Body    string            
+	Captures []keyValue
+	Wait    int               
 }
+
+var input string
 
 func parse(s string, stack map[string]string) string {
 	urlTemplate, err := template.New("urlTemplate").Parse(s)
@@ -51,35 +52,43 @@ func formatString(body []byte, rawFlag bool) string {
 }
 
 func Execute(fileName string, rawFlag bool, header bool, quiet bool, parserFlag bool) {
-	if parserFlag {
-		fmt.Println("Using parser (experimental)")
-		return
-	}
-
 	prog := []Step{}
 
-	yamlFile, err := os.ReadFile(fileName)
+    file, err := os.ReadFile(fileName)
+    if err != nil {
+        fmt.Printf("could not read file: %v\n", err)
+    }
+
+    input = string(file)
+    lines := strings.Split(input, "\n")
+
+    parser := NewParser(lines)
+    requests := parser.parse()
+
+    for _, request := range(requests) {
+        step := Step{
+            "",
+            request.method,
+            request.url,
+            request.statusCode,
+            request.headers,
+            "",
+            request.captures,
+            request.wait,
+        }
+
+        if request.body != nil {
+            bodyBytes, _ := json.Marshal(request.body)
+            step.Body = string(bodyBytes)
+        }
+
+        prog = append(prog, step)
+    }
+
+
+	err = run(prog, rawFlag, header, quiet)
 	if err != nil {
-		fmt.Printf("could not read file: %v\n", err)
-	}
-
-	err = yaml.Unmarshal(yamlFile, &prog)
-	if err != nil {
-		fmt.Printf("invalid file format: %v\n", err)
-		os.Exit(1)
-	}
-
-	errs := validate(prog)
-	if errs != nil {
-		for _, err := range errs {
-			fmt.Println(err)
-		}
-		os.Exit(1)
-	}
-
-	rerr := run(prog, rawFlag, header, quiet)
-	if rerr != nil {
-		fmt.Printf("%v\n", rerr)
+		fmt.Printf("%v\n", err)
 	}
 
 }
