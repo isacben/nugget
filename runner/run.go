@@ -44,10 +44,10 @@ func run(prog []Step, rawFlag bool, headerFlag bool, quiet bool) error {
 			"Authorization": {authHeader},
 		}
 
-		if step.Header != nil {
-			for k, v := range step.Header {
-				v = parse(v, stack)
-				req.Header.Add(k, v)
+		if step.Headers != nil {
+			for _, header := range step.Headers {
+                value := parse(header.value, stack)
+				req.Header.Add(header.key, value)
 			}
 		}
 
@@ -97,12 +97,12 @@ func run(prog []Step, rawFlag bool, headerFlag bool, quiet bool) error {
 		}
 
 		// TODO: simplify this and remove from function
-		if step.Capture != nil {
-			for key, val := range step.Capture {
+		if step.Captures != nil {
+			for _, capture := range step.Captures {
 				// key = variable name from the capture: customer_id from "customer_id: .id" in the yaml file
 				// val = the string to query the response json: .id from "customer_id: .id" in the yaml file
 				// do the jq query on the response body string
-				query, err := gojq.Parse(val)
+				query, err := gojq.Parse(capture.value)
 				if err != nil {
 					fmt.Println(err)
 				}
@@ -127,7 +127,7 @@ func run(prog []Step, rawFlag bool, headerFlag bool, quiet bool) error {
 						}
 						fmt.Println(err)
 					}
-					stack[key] = fmt.Sprintf("%v", v)
+					stack[capture.key] = fmt.Sprintf("%v", v)
 				}
 			}
 		}
