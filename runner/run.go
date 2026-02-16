@@ -1,18 +1,20 @@
 package runner
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
 	"io"
 	"net/http"
-	"strings"
 	"time"
+    "html/template"
+
 
 	"github.com/google/uuid"
 	"github.com/itchyny/gojq"
 )
 
-func run(prog []Step, rawFlag bool, headerFlag bool, quiet bool) error {
+func run(requests []Request, rawFlag bool, headerFlag bool, quiet bool) error {
 	token, err := getToken()
 	if err != nil {
 		return fmt.Errorf("authentication error: %s", err)
@@ -21,19 +23,20 @@ func run(prog []Step, rawFlag bool, headerFlag bool, quiet bool) error {
 	// prepare stack map with values for the template
 	stack := make(map[string]string)
 
-	for _, step := range prog {
+	for _, request := range requests {
 		stack["uuid"] = uuid.NewString()
 
 		// TODO: fix parse() panic
-		step.Url = parse(step.Url, stack)
+		request.url = parse(request.url, stack)
 
-		reqBody := strings.NewReader("")
-		if step.Body != "" {
-			step.Body = parse(step.Body, stack)
-			reqBody = strings.NewReader(step.Body)
-		}
+        // body validation
+        var requestBody io.Reader
+        if request.body != nil {
+            bodyBytes, _ := json.Marshal(request.body)
+            requestBody = bytes.NewReader(bodyBytes)
+        }
 
-		req, err := http.NewRequest(step.Method, step.Url, reqBody)
+		req, err := http.NewRequest(request.method, request.url, requestBody)
 		if err != nil {
 			return fmt.Errorf("client: could not create request: %s", err)
 		}
@@ -44,8 +47,8 @@ func run(prog []Step, rawFlag bool, headerFlag bool, quiet bool) error {
 			"Authorization": {authHeader},
 		}
 
-		if step.Headers != nil {
-			for _, header := range step.Headers {
+		if request.headers != nil {
+			for _, header := range request.headers {
                 value := parse(header.value, stack)
 				req.Header.Add(header.key, value)
 			}
@@ -65,8 +68,7 @@ func run(prog []Step, rawFlag bool, headerFlag bool, quiet bool) error {
 		}
 
 		if !quiet {
-			fmt.Printf("step: %s\n", step.Name)
-			fmt.Printf("response data:\n")
+			fmt.Printf("Response data:\n")
 		}
 
 		// print response data
@@ -79,16 +81,16 @@ func run(prog []Step, rawFlag bool, headerFlag bool, quiet bool) error {
 			}
 
 			if !quiet {
-				fmt.Printf("response header:\n")
+				fmt.Printf("Response headers:\n")
 			}
 
-			fmt.Println(formatString(resHeader, rawFlag))
+			fmt.Println(formatString(resHeader, true))
 		}
 
-		if step.Http > 0 {
+		if request.statusCode > 0 {
 			respCode := res.StatusCode
-			if respCode != step.Http {
-				return fmt.Errorf("\033[0;31merror\033[0m: expected %v but got %v", step.Http, res.StatusCode)
+			if respCode != request.statusCode {
+				return fmt.Errorf("\033[0;31merror\033[0m: expected %v but got %v", request.statusCode, res.StatusCode)
 			}
 
 			if !quiet {
@@ -97,8 +99,8 @@ func run(prog []Step, rawFlag bool, headerFlag bool, quiet bool) error {
 		}
 
 		// TODO: simplify this and remove from function
-		if step.Captures != nil {
-			for _, capture := range step.Captures {
+		if request.captures != nil {
+			for _, capture := range request.captures {
 				// key = variable name from the capture: customer_id from "customer_id: .id" in the yaml file
 				// val = the string to query the response json: .id from "customer_id: .id" in the yaml file
 				// do the jq query on the response body string
@@ -132,9 +134,9 @@ func run(prog []Step, rawFlag bool, headerFlag bool, quiet bool) error {
 			}
 		}
 
-		if step.Wait > 0 {
+		if request.wait > 0 {
 			chars := []string{"|", "/", "-", "\\"}
-			duration := time.Duration(step.Wait) * time.Millisecond // Total duration of the animation
+			duration := time.Duration(request.wait) * time.Millisecond // Total duration of the animation
 
 			startTime := time.Now()
 
@@ -148,4 +150,33 @@ func run(prog []Step, rawFlag bool, headerFlag bool, quiet bool) error {
 		}
 	}
 	return nil
+}
+
+func parse(s string, stack map[string]string) string {
+	urlTemplate, err := template.New("urlTemplate").Parse(s)
+	if err != nil {
+		panic(err)
+	}
+
+	var buf bytes.Buffer
+	err = urlTemplate.Execute(&buf, stack)
+	if err != nil {
+		panic(err)
+	}
+	return buf.String()
+}
+
+func formatString(body []byte, rawFlag bool) string {
+	// if requested, try to return the body string formated as json
+	if rawFlag {
+		return string(body)
+	}
+
+	var bodyJsonOutput bytes.Buffer
+	err := json.Indent(&bodyJsonOutput, body, "", "  ")
+	if err != nil {
+		return string(body)
+	}
+
+	return bodyJsonOutput.String()
 }
