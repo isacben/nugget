@@ -61,8 +61,8 @@ func (p *Parser) parse() []Request {
 func (p *Parser) request(method, url string) Request {
 	var req Request
 
-	req.method = method
-	req.url = url
+	req.method = strings.TrimSpace(method)
+	req.url = strings.TrimSpace(url)
 
 	for p.current < len(p.lines) {
 		left, right := p.parseLine()

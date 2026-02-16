@@ -17,7 +17,6 @@ var cfgFile string
 var RawFlag bool
 var Header bool
 var Quiet bool
-var ParserFlag bool
 
 // rootCmd represents the base command when called without any subcommands
 var rootCmd = &cobra.Command{
@@ -34,7 +33,7 @@ This application lets you chain API requests defined in configuration files.`,
 			os.Exit(1)
 		}
 		fileName := args[0]
-		runner.Execute(fileName, RawFlag, Header, Quiet, ParserFlag)
+		runner.Execute(fileName, RawFlag, Header, Quiet)
 	},
 }
 
@@ -56,14 +55,9 @@ func init() {
 
 	rootCmd.PersistentFlags().StringVar(&cfgFile, "config", "", "config file (default is $HOME/.nugget.yaml)")
 
-	// Cobra also supports local flags, which will only run
-	// when this action is called directly.
-	rootCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
-
 	rootCmd.PersistentFlags().BoolVar(&RawFlag, "raw", false, "raw output")
 	rootCmd.PersistentFlags().BoolVarP(&Header, "header", "H", false, "print response headers")
 	rootCmd.PersistentFlags().BoolVarP(&Quiet, "quiet", "q", false, "display less output")
-	rootCmd.PersistentFlags().BoolVarP(&ParserFlag, "parser", "p", false, "use parser (experimental)")
 }
 
 // initConfig reads in config file and ENV variables if set.
