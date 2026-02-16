@@ -29,7 +29,7 @@ Pass the `-H` flag to include the response headers in the output.
 
 ## Minimal example
 
-This would be a simple yaml file with a get request:
+This would be a simple nugget file with a get request:
 
 ```
 # Get TODO list
@@ -54,9 +54,9 @@ GET http://mytodo.com/api/v1/todos
 HTTP 200
 ```
 
-## Capture values
+## Save values
 
-Use the capture keyword to capture a list of values from the response:
+Use the `SAVE` keyword to save one or more values from the response:
 
 ```
 # Create TODO item
@@ -69,7 +69,7 @@ SAVE todo_id .id
 SAVE todo_name .name
 ```
 
-To capture values, use the path of the value you want to capture from the response. For example, `.address.country` if you need to capture the country in the following json:
+To save values, use the path of the value you want to save from the response. For example, `.address.country` if you need to save the country in the following json:
 
 ```json
 {
@@ -84,19 +84,19 @@ To capture values, use the path of the value you want to capture from the respon
 }
 ```
 
-## Use captured values
+## Use saved values
 
-You can use the captured values adding the variable name in a "template" like fashion: `{{ .variable-name }}`.
+You can use the saved values adding the variable name in a "template" like fashion: `{{ .variable-name }}`.
 
-The captured values can be use in the following areas:
+The saved values can be use in the following areas:
 
 - The body json
 - The url
-- The header, wrapping the template variable in quoutes: `"{{ .some-header }}"`
+- The header
 
-## Chain several requests (use captured values)
+## Chain several requests (use saved values)
 
-To chain several requests, just add more steps in the yaml file starting with the `name` of the step. Use the captured values as explained before.
+To chain several requests, just add more requests to the same nugget file. Use the saved values as explained before.
 
 ```
 # Create TODO item
@@ -123,7 +123,7 @@ nugget has the following keywords:
 - `GET, POST, PUT, DELETE, PATCH `: type of request
 - `HTTP`: http response code assert
 - `HEADER`: add request header
-- `SAVE`: capture from response and seve value to variable
+- `SAVE`: save a value from the response to a variable
 - `WAIT`: wait for a certain amount of milliseconds before the next request
 
 And the following pre-defined template variables:
