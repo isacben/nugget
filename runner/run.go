@@ -7,6 +7,7 @@ import (
 	"io"
 	"net/http"
 	"time"
+    "strings"
     "html/template"
 
 
@@ -33,7 +34,8 @@ func run(requests []Request, rawFlag bool, headerFlag bool, quiet bool) error {
         var requestBody io.Reader
         if request.body != nil {
             bodyBytes, _ := json.Marshal(request.body)
-            requestBody = bytes.NewReader(bodyBytes)
+            bodyString := parse(string(bodyBytes), stack) // to be able to use saved variables
+            requestBody = strings.NewReader(bodyString)
         }
 
 		req, err := http.NewRequest(request.method, request.url, requestBody)
