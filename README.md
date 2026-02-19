@@ -21,10 +21,10 @@ Use the `--raw` flag to print the raw response.
 % nugget requests.n --raw
 ```
 
-Pass the `-H` flag to include the response headers in the output.
+Pass the `-q` flag to print just the response body.
 
 ```bash
-% nugget requests.n -H
+% nugget requests.n -q
 ```
 
 ## Minimal example
