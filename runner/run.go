@@ -15,7 +15,15 @@ import (
 	"github.com/itchyny/gojq"
 )
 
-func run(requests []Request, rawFlag bool, headerFlag bool, quiet bool) error {
+const (
+	reset = "\x1b[0m"
+	bold  = "\x1b[1m"
+
+	cyan   = "\x1b[38;2;122;162;247m" // #7AA2F7
+	purple = "\x1b[38;2;187;154;247m" // #BB9AF7
+)
+
+func run(requests []Request, rawFlag bool, quiet bool) error {
 	token, err := getToken()
 	if err != nil {
 		return fmt.Errorf("authentication error: %s", err)
@@ -69,34 +77,25 @@ func run(requests []Request, rawFlag bool, headerFlag bool, quiet bool) error {
 			return fmt.Errorf("client: could not read response body: %s", err)
 		}
 
-		if !quiet {
-			fmt.Printf("Response data:\n")
-		}
+        if !quiet {
+            // print status code
+            fmt.Printf("%s%sHTTP%s %v\n", bold, cyan, reset, res.Status)
+
+            // print header
+            traceIDs := res.Header["X-B3-Traceid"]
+            if len(traceIDs) > 0 {
+                fmt.Printf("%s%sX-B3-Traceid:%s %v\n", bold, purple, reset, traceIDs[0])
+            }
+        }
 
 		// print response data
 		fmt.Println(formatString(body, rawFlag))
-
-		if headerFlag {
-			resHeader, err := json.Marshal(res.Header)
-			if err != nil {
-				return fmt.Errorf("client: could not process response header: %s", err)
-			}
-
-			if !quiet {
-				fmt.Printf("Response headers:\n")
-			}
-
-			fmt.Println(formatString(resHeader, true))
-		}
+        fmt.Println()
 
 		if request.statusCode > 0 {
 			respCode := res.StatusCode
 			if respCode != request.statusCode {
 				return fmt.Errorf("\033[0;31merror\033[0m: expected %v but got %v", request.statusCode, res.StatusCode)
-			}
-
-			if !quiet {
-				fmt.Printf("\u001b[32;1msuccess\033[0m: status code is %v\n", res.StatusCode)
 			}
 		}
 

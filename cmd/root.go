@@ -15,7 +15,6 @@ import (
 
 var cfgFile string
 var RawFlag bool
-var Header bool
 var Quiet bool
 
 // rootCmd represents the base command when called without any subcommands
@@ -33,7 +32,7 @@ This application lets you chain API requests defined in configuration files.`,
 			os.Exit(1)
 		}
 		fileName := args[0]
-		runner.Execute(fileName, RawFlag, Header, Quiet)
+		runner.Execute(fileName, RawFlag, Quiet)
 	},
 }
 
@@ -56,7 +55,6 @@ func init() {
 	rootCmd.PersistentFlags().StringVar(&cfgFile, "config", "", "config file (default is $HOME/.nugget.yaml)")
 
 	rootCmd.PersistentFlags().BoolVar(&RawFlag, "raw", false, "raw output")
-	rootCmd.PersistentFlags().BoolVarP(&Header, "header", "H", false, "print response headers")
 	rootCmd.PersistentFlags().BoolVarP(&Quiet, "quiet", "q", false, "display less output")
 }
 
