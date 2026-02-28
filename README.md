@@ -113,6 +113,14 @@ PUT https://mytodos.com/api/v1/todos/{{ .todo_id }}/update
 {
   "name": "Go grocery shopping"
 } 
+# Stop until ENTER is pressed
+WAIT -1
+
+# Update the previous TODO again
+PUT https://mytodos.com/api/v1/todos/{{ .todo_id }}/update
+{
+  "name": "Go shopping"
+} 
 ```
 
 ## Reference
@@ -124,7 +132,7 @@ nugget has the following keywords:
 - `HTTP`: http response code assert
 - `HEADER`: add request header
 - `SAVE`: save a value from the response to a variable
-- `WAIT`: wait for a certain amount of milliseconds before the next request
+- `WAIT`: wait for a certain amount of milliseconds before the next request; use `-1` to continue after `ENTER` is pressed
 
 And the following pre-defined template variables:
 

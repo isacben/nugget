@@ -46,7 +46,8 @@ func run(requests []Request, rawFlag bool, quiet bool) error {
             requestBody = strings.NewReader(bodyString)
         }
 
-		req, err := http.NewRequest(request.method, request.url, requestBody)
+		req, err := http.NewRequest(strings.ToUpper(request.method),
+                                        request.url, requestBody)
 		if err != nil {
 			return fmt.Errorf("client: could not create request: %s", err)
 		}
@@ -135,22 +136,34 @@ func run(requests []Request, rawFlag bool, quiet bool) error {
 			}
 		}
 
-		if request.wait > 0 {
-			chars := []string{"|", "/", "-", "\\"}
-			duration := time.Duration(request.wait) * time.Millisecond // Total duration of the animation
-
-			startTime := time.Now()
-
-			for time.Since(startTime) < duration {
-				for _, char := range chars {
-					fmt.Printf("waiting... %s\r", char) // \r to overwrite the previous character
-					time.Sleep(100 * time.Millisecond)  // Adjust delay for speed
-				}
-			}
-			fmt.Println("\rwaiting...  ")
-		}
+        // Slide Show
+        if request.wait != 0 {
+            wait(request.wait)
+        }
 	}
 	return nil
+}
+
+func wait(ms int) {
+    switch {
+    case ms == -1:
+        fmt.Print("Press Enter to continue...")
+        var input string
+        fmt.Scanln(&input)
+        fmt.Println()
+    case ms > 0:
+        chars := []string{"|", "/", "-", "\\"}
+        duration := time.Duration(ms) * time.Millisecond // Total duration of the animation
+        startTime := time.Now()
+
+        for time.Since(startTime) < duration {
+            for _, char := range chars {
+                fmt.Printf("waiting... %s\r", char) // \r to overwrite the previous character
+                time.Sleep(100 * time.Millisecond)  // Adjust delay for speed
+            }
+        }
+        fmt.Println("\rwaiting...  ")
+    }
 }
 
 func parse(s string, stack map[string]string) string {
