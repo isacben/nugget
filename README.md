@@ -36,6 +36,28 @@ This would be a simple nugget file with a get request:
 GET http://mytodo.com/api/v1/todos
 ```
 
+## Label the output
+
+This would print a text before the output of the request (to label the output):
+
+```
+GET http://mytodo.com/api/v1/todos
+ECHO Get TODO list
+```
+
+## Skip a request
+
+Use the `skip` keyword to skip a request:
+
+```
+# This will run
+GET http://mytodo.com/api/v1/todos
+
+# This will not
+GET http://mytodo.com/api/v1/todos/123
+SKIP
+```
+
 ## Add headers
 
 You can add additional headers. nugget already takes care of the `Content-type` and `Authorization` headers (it uses Bearer Authentication).
@@ -132,6 +154,8 @@ nugget has the following keywords:
 - `HTTP`: http response code assert
 - `HEADER`: add request header
 - `SAVE`: save a value from the response to a variable
+- `ECHO`: print the provided text before the request output
+- `SKIP`: skip the request
 - `WAIT`: wait for a certain amount of milliseconds before the next request; use `-1` to continue after `ENTER` is pressed
 
 And the following pre-defined template variables:

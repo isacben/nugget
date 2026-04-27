@@ -22,6 +22,8 @@ type Request struct {
 	captures   []keyValue
 	statusCode int
 	wait       int
+	echo       string
+        skip       bool
 	body       Json
 }
 
@@ -95,6 +97,12 @@ func (p *Parser) request(method, url string) Request {
 		case "save":
 			req.captures = append(req.captures, p.pair(left, right))
 
+		case "echo":
+			req.echo = p.echo(left, right)
+
+		case "skip":
+			req.skip = true
+			
 		default:
 			p.error(left, false, "Unknown sysmbol.")
 		}
@@ -103,6 +111,14 @@ func (p *Parser) request(method, url string) Request {
 	return req
 }
 
+func (p *Parser) echo(left, right string) string {
+    if isEmpty(right) {
+        p.error(left, true, "Expected text to print.")
+    }
+
+    return right
+}
+	
 func (p *Parser) number(left, right string) int {
     if isEmpty(right) {
         p.error(left, true, "Expected number.")
@@ -221,6 +237,7 @@ func (p *Parser) parseLine() (string, string) {
 			continue
 		}
 
+		// TODO(isaac): add support for TAB
 		parts := strings.SplitN(s, " ", 2)
 		if isValid(parts) {
 			return parts[0], parts[1]
@@ -246,7 +263,7 @@ func isKeyword(param string) bool {
 	}
 
 	keywords := []string{
-		"header", "http", "wait", "save",
+		"header", "http", "wait", "save", "echo", "skip",
 	}
 	return slices.Contains(keywords, strings.ToLower(param))
 }

@@ -33,6 +33,11 @@ func run(requests []Request, rawFlag bool, quiet bool) error {
 	stack := make(map[string]string)
 
 	for _, request := range requests {
+
+		if request.skip {
+			continue
+		}
+		
 		stack["uuid"] = uuid.NewString()
 
 		// TODO: fix parse() panic
@@ -79,6 +84,9 @@ func run(requests []Request, rawFlag bool, quiet bool) error {
 		}
 
         if !quiet {
+		// print echoed string
+		fmt.Printf("%s\n", request.echo)
+		
             // print status code
             fmt.Printf("%s%sHTTP%s %v\n", bold, cyan, reset, res.Status)
 
