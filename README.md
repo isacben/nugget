@@ -162,6 +162,30 @@ And the following pre-defined template variables:
 
 - `{{ .uuid }}`: generates a random UUID
 
+## Emacs syntax highlighting
+
+Add this code to your `.emacs` file:
+
+```
+(require 'generic-x)
+
+(define-generic-mode 'nugget-mode
+  '("#")
+  '("POST" "GET" "PUT" "DELETE" "PATCH"
+    "HTTP" "HEADER" "SAVE" "ECHO" "SKIP" "WAIT"
+    "post" "get" "put" "delete" "patch"
+    "http" "header" "save" "echo" "skip" "wait")
+  '(("{{[[:space:]]*\\(\\.[a-zA-Z_][a-zA-Z0-9_-]*\\)[[:space:]]*}}"
+       0 font-lock-preprocessor-face)
+    ("\\_<[-+]?[0-9]*\\.?[0-9]+\\_>" . font-lock-constant-face))
+  '("\\.n\\'")
+  nil
+  "Nugget syntax highlighting."
+)
+
+(add-to-list 'auto-mode-alist '("\\.n\\'" . nugget-mode))
+```
+
 ## Author
 
 Isaac Benitez  
