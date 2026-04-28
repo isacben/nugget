@@ -166,7 +166,7 @@ And the following pre-defined template variables:
 
 Add this code to your `.emacs` file:
 
-```
+```lisp
 (require 'generic-x)
 
 (define-generic-mode 'nugget-mode
